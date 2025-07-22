@@ -2,8 +2,7 @@ import requests
 import os
 
 # Get API key from environment variable with fallback
-API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
-
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 def generate_comprehensive_project(config):
     """
     Generate a comprehensive project package with accessibility modifications
