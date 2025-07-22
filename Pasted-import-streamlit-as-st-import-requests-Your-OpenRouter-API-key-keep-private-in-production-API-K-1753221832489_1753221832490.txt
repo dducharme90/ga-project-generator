@@ -1,0 +1,83 @@
+import streamlit as st
+import requests
+
+# Your OpenRouter API key (keep private in production)
+API_KEY = "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"
+
+# Small sample dataset
+standards_data = {
+    "GA": {
+        "8th": {
+            "Science": {
+                "S8P2": {
+                    "title": "Energy and transformations",
+                    "elements": {
+                        "S8P2a": "Show how energy can be transformed from one form to another.",
+                        "S8P2b": "Explain how energy is conserved in a closed system.",
+                        "S8P2c": "Describe how heat moves from hot to cold objects."
+                    }
+                }
+            }
+        }
+    }
+}
+
+time_options = [
+    "30 minutes", "1 hour", "1 class period", "2 class periods",
+    "3 class periods", "1 week", "2 weeks"
+]
+
+st.title("🎓 Middle School Project Generator (Free AI via OpenRouter)")
+
+# Dropdowns
+state = st.selectbox("State", list(standards_data.keys()))
+grade = st.selectbox("Grade", list(standards_data[state].keys()))
+subject = st.selectbox("Content Area", list(standards_data[state][grade].keys()))
+standard = st.selectbox("Standard", list(standards_data[state][grade][subject].keys()))
+standard_title = standards_data[state][grade][subject][standard]["title"]
+element = st.selectbox("Sub-Standard", list(standards_data[state][grade][subject][standard]["elements"].keys()))
+element_desc = standards_data[state][grade][subject][standard]["elements"][element]
+time_allotment = st.selectbox("Time Allotment", time_options)
+
+# API call to OpenRouter
+def generate_project_openrouter(prompt):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "model": "mistralai/mistral-7b-instruct",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code == 200:
+        return response.json()["choices"][0]["message"]["content"]
+    else:
+        return f"❌ Error: {response.status_code} — {response.text}"
+
+if st.button("Generate Project Idea"):
+    with st.spinner("Thinking..."):
+        prompt = (
+            f"Create a standards-aligned, engaging middle school science project.\n\n"
+            f"Grade: {grade}\n"
+            f"State: {state}\n"
+            f"Content Area: {subject}\n"
+            f"Standard: {standard} – {standard_title}\n"
+            f"Sub-Standard: {element} – {element_desc}\n"
+            f"Time Allotment: {time_allotment}\n\n"
+            f"Include:\n"
+            f"- Project Title\n"
+            f"- Driving Question\n"
+            f"- Project Summary\n"
+            f"- Materials List\n"
+            f"- 3-4 Category Rubric (brief)"
+        )
+
+        result = generate_project_openrouter(prompt)
+        st.markdown("### 📘 Generated Project")
+        st.write(result)
